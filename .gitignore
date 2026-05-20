@@ -1,0 +1,4 @@
+__pycache__
+clicker.db
+*.pyc
+.env

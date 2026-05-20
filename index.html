@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Love Marlon 💝</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #0a0a0a;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 { font-size: 2rem; margin-bottom: 8px; }
+        p.sub { color: #888; margin-bottom: 40px; }
+
+        /* JOIN SECTION */
+        .join-box {
+            background: #1a1a1a;
+            padding: 24px;
+            border-radius: 16px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        input {
+            background: #2a2a2a;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            width: 220px;
+        }
+
+        button {
+            background: #e63946;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.8; }
+
+        /* CLICK BUTTONS */
+        .click-section {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .click-section.visible { display: flex; }
+
+        .click-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .click-btn {
+            font-size: 2rem;
+            padding: 16px 32px;
+            border-radius: 16px;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .click-btn:active { transform: scale(0.92); }
+
+        /* LEADERBOARD */
+        .leaderboard {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .leaderboard h2 {
+            margin-bottom: 16px;
+            color: #aaa;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .entry {
+            background: #1a1a1a;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .entry .name { font-size: 1.1rem; }
+        .entry .counts { color: #aaa; font-size: 0.95rem; }
+        .rank { font-size: 1.4rem; margin-right: 12px; }
+    </style>
+</head>
+<body>
+
+    <h1>💝 Love Marlon</h1>
+    <p class="sub">Enter your nickname and show some love</p>
+
+    <div class="join-box">
+        <input type="text" id="nicknameInput" placeholder="Your nickname..." />
+        <button onclick="joinGame()">Join</button>
+    </div>
+
+    <div class="click-section" id="clickSection">
+        <p id="welcomeMsg"></p>
+        <div class="click-buttons">
+            <button class="click-btn" onclick="sendClick('hearts')">❤️</button>
+            <button class="click-btn" onclick="sendClick('cookies')">🍪</button>
+        </div>
+    </div>
+
+    <div class="leaderboard">
+        <h2>🏆 Top Fans</h2>
+        <div id="leaderboardList"></div>
+    </div>
+
+    <script>
+        let currentUser = null
+
+        async function joinGame() {
+            const nickname = document.getElementById('nicknameInput').value.trim()
+            if (!nickname) return
+
+            const res = await fetch('http://127.0.0.1:5000/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname })
+            })
+
+            const data = await res.json()
+            currentUser = nickname
+
+            document.getElementById('welcomeMsg').textContent = data.message
+            document.getElementById('clickSection').classList.add('visible')
+            loadLeaderboard()
+        }
+
+        async function sendClick(type) {
+            if (!currentUser) return
+
+            await fetch('http://127.0.0.1:5000/click', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname: currentUser, type })
+            })
+
+            loadLeaderboard()
+        }
+
+        async function loadLeaderboard() {
+            const res = await fetch('http://127.0.0.1:5000/leaderboard')
+            const data = await res.json()
+
+            const medals = ['🥇', '🥈', '🥉']
+            const list = document.getElementById('leaderboardList')
+
+            list.innerHTML = data.map((person, i) => `
+                <div class="entry">
+                    <div style="display:flex; align-items:center">
+                        <span class="rank">${medals[i] || `#${i + 1}`}</span>
+                        <span class="name">${person.nickname}</span>
+                    </div>
+                    <span class="counts">❤️ ${person.hearts} &nbsp; 🍪 ${person.cookies}</span>
+                </div>
+            `).join('')
+        }
+
+        loadLeaderboard()
+    </script>
+
+</body>
+</html>
